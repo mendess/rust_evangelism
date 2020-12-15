@@ -191,7 +191,6 @@ int main() {
                 }
               </code>
             </pre>
-            <p class="fragment"> Agora vamos tentar criar o mesmo erro. </p>
           </section>
           <section data-auto-animate data-background-color="#750b0b">
             <div class="r-stack">
@@ -211,9 +210,8 @@ int main() {
                 }
               </code>
               </pre>
-              <img class="fragment fade-out" src="img/use_after_move.png" />
+              <img src="img/use_after_move.png" />
             </div>
-            <p> Agora vamos tentar criar o mesmo erro. </p>
           </section>
           <section data-auto-animate data-background-color="#750b0b">
             <pre class="lang-rust" data-id="code-animation">
@@ -234,6 +232,28 @@ int main() {
             </pre>
             <img src="img/use_after_move.png" />
           </section>
+          <section>
+            <div class="fragment" style="text-align: left">
+              <h4> Double free </h4>
+            Assim, usando os invariantes:
+            <ul>
+              <li> Para cada bloco de memória, existe apenas um dono*. </li>
+              <li> Apenas o dono de um bloco memória pode libertar o mesmo. </li>
+            </ul>
+            Podemos concluir ter a certeza que nunca existirá um "double free".
+            </div>
+            <br>
+            <div class="fragment" style="text-align: left">
+              <h4> Use after free </h4>
+              Sempre que a <em>ownership</em> de um bloco de memória é passada
+              de uma variável para outra, a antiga fica num estado inutilizável,
+              e o compilador garante que não será mais acedida. Isto em conjunto
+              com a anterior garante que não podem usar "use after free" bugs.
+            </div>
+          </section>
+        </section>
+        <section>
+          <h1>Borrowing</h1>
         </section>
       </div>
     </div>
