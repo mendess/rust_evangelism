@@ -1,0 +1,257 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Rust Evangelism</title>
+
+    <link rel="stylesheet" href="dist/reset.css">
+    <link rel="stylesheet" href="dist/reveal.css">
+    <link rel="stylesheet" href="dist/theme/black2.css" id="theme">
+
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="plugin/highlight/gruvbox-dark.css" id="highlight-theme">
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h1 class="title">Rust Evangelism</h1>
+          <p class="subtitle">🦀</p>
+          <p class="author">Pedro Mendes</p>
+        </section>
+        <section data-markdown>
+          <textarea data-template>
+            # _disclaimer_
+
+            Esta talk não é um tutorial de Rust!
+
+            Esta talk é eu a falar das partes que eu mais gosto da linguagem para mostrar o
+            que é Rust and _what is the hype all about_.
+
+          </textarea>
+        </section>
+        <section>
+          <h1>O que é Rust?</h1>
+          <section data-markdown>
+            <textarea data-template>
+              Rust é uma _systems programming language_, isto quer dizer que é uma linguagem que
+              permite ter um controlo de baixo nível do hardware e recursos da máquina.
+
+              As duas linguagens mais conhecidas neste campo são C e C++.
+            </textarea>
+          </section>
+          <section>
+            <h2>Porquê fazer uma linguagem nova</h2>
+
+            C, C++ são linguagens que dão muito poder e controlo a quem as usa, deixam
+            controlar todos os detalhes. Mas...
+            <div class="fragment">
+              <blockquote>With great power, comes great responsibility</blockquote>
+              <p style="text-align: right"> – Spider Man probably</p>
+            </div>
+          </section>
+        </section>
+        <section>
+          <h1>Ownership</h1>
+          <section>
+            Qual é o principal dificuldade de trabalhar com estas linguagens?
+            <span class="fragment">Gestão de memória.</span>
+
+            <div class="fragment">
+              Quem é aqui adora esta mensagem de erro?
+              <pre> Segmentation fault (core dumped) </pre>
+            </div>
+            <div class="fragment">
+              E se houvesse uma linguagem em que não e possível* compilar sequer código que
+              pode dar segmentation fault?
+            </div>
+
+            <div class="fragment"><em>mas como?</em></div>
+
+          </section>
+          <section data-markdown>
+            <textarea data-template>
+              _Ownership_ é um dos _mental models_ que podemos utilizar para conseguir evitar
+              um conjunto de bugs como "double free" ou "use after free"
+
+              Podemos ver _ownership_ como uma forma de responder à pergunta:
+              "Quem é responsável por libertar esta memória?"
+
+              Vamos começar com C para ilustrar isto.
+            </textarea>
+          </section>
+          <section data-auto-animate>
+            Vamos fazer algo simples, um array estático.
+
+            <pre class="lang-c" data-id="code-animation"><code data-trim>
+typedef struct {
+    int* values;
+    size_t length;
+} IntArray;
+            </code></pre>
+            <ul>
+              <li> <b>values</b>: Tem um pointer para os valores que o array guarda.</li>
+              <li> <b>length</b>: E quantos elementos tem. </li>
+            </ul>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c" data-id="code-animation">
+              <code data-trim data-line-numbers="6-9|6-11|6-15|6-17|1-1000">
+typedef struct {
+    int* values;
+    size_t length;
+} IntArray;
+
+IntArray int_array_make(size_t length) {
+  return (IntArray) {.length = length,
+                     .values = calloc(sizeof(int), length)};
+}
+
+void int_array_drop(IntArray a) { free(a.values); }
+
+int main() {
+    // a owns the memory
+    IntArray a = int_array_make(5);
+    // a's memory is dropped/freed
+    int_array_drop(a);
+
+}
+            </code></pre>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c" data-id="code-animation">
+              <code data-trim data-line-numbers="11-12|15-16|1-1000">
+IntArray int_array_make(size_t length) {
+  return (IntArray) {.length = length,
+                     .values = calloc(sizeof(int), length)};
+}
+
+void int_array_drop(IntArray a) { free(a.values); }
+
+int main() {
+    // a owns the memory
+    IntArray a = int_array_make(5);
+    // oh no, now both a and b own the memory
+    IntArray b = a;
+    // a's memory is dropped/freed
+    int_array_drop(a);
+    // use after free because there were two "owners"
+    printf("%d\n", b.values[1]); // Seg Fault
+}
+            </code></pre>
+            <p class="fragment">
+            Nao correu muito bem, vamos ver como é que Rust impede que isto aconteça.
+            </p>
+          </section>
+          <section data-auto-animate>
+            Vamos partir do mesmo ponto. Um array estático.
+            <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers>
+                type IntArray = Box<[i32]>;
+              </code>
+            </pre>
+            Em Rust o array é um tipo predefinido, o que esta linha faz é
+            apenas definir um "type alias" para tentar aproximar ao maximo possivel
+            ao codigo C.
+            <br>
+            Este tipo é exatamente equivalente ao tipo em C, por de traz
+            desta sintaxe está apenas um pointer e um comprimento.
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers="4-5|6-7|1-1000">
+                type IntArray = Box<[i32]>;
+
+                fn main() {
+                  // a owns the memory
+                  let a: IntArray = vec![0; 5].into_boxed_slice();
+                  // a's memory is dropped
+                  drop(a);
+                }
+              </code>
+            </pre>
+            <p class="fragment"> Agora vamos tentar criar o mesmo erro. </p>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers="6-7|10-11">
+                type IntArray = Box<[i32]>;
+
+                fn main() {
+                  // a owns the memory
+                  let a: IntArray = vec![0; 5].into_boxed_slice();
+                  // Move a to b
+                  let b = a;
+                  // a's memory is dropped
+                  drop(a);
+                  // try to use b
+                  println!("{}", b[1]);
+                }
+              </code>
+            </pre>
+            <p class="fragment"> Agora vamos tentar criar o mesmo erro. </p>
+          </section>
+          <section data-auto-animate data-background-color="#750b0b">
+            <div class="r-stack">
+              <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers>
+                type IntArray = Box<[i32]>;
+
+                fn main() {
+                  // a owns the memory
+                  let a: IntArray = vec![0; 5].into_boxed_slice();
+                  // Move a to b
+                  let b = a;
+                  // a's memory is dropped
+                  drop(a);
+                  // try to use b
+                  println!("{}", b[1]);
+                }
+              </code>
+              </pre>
+              <img class="fragment fade-out" src="img/use_after_move.png" />
+            </div>
+            <p> Agora vamos tentar criar o mesmo erro. </p>
+          </section>
+          <section data-auto-animate data-background-color="#750b0b">
+            <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers>
+                type IntArray = Box<[i32]>;
+
+                fn main() {
+                  // a owns the memory
+                  let a: IntArray = vec![0; 5].into_boxed_slice();
+                  // Move a to b
+                  let b = a;
+                  // a doesn't own the memory anymore and is 'uninitialized'
+                  drop(a);
+                  // try to use b
+                  println!("{}", b[1]);
+                }
+              </code>
+            </pre>
+            <img src="img/use_after_move.png" />
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script>
+      // More info about initialization & config:
+      // - https://revealjs.com/initialization/
+      // - https://revealjs.com/config/
+      Reveal.initialize({
+              hash: true,
+
+              // Learn about plugins: https://revealjs.com/plugins/
+              plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+            });
+    </script>
+  </body>
+</html>
