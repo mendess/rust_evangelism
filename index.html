@@ -111,7 +111,7 @@ IntArray int_array_make(size_t length) {
 
 void int_array_drop(IntArray a) { free(a.values); }
 
-int main() {
+int main(void) {
     // a owns the memory
     IntArray a = int_array_make(5);
     // a's memory is dropped/freed
@@ -130,7 +130,7 @@ IntArray int_array_make(size_t length) {
 
 void int_array_drop(IntArray a) { free(a.values); }
 
-int main() {
+int main(void) {
     // a owns the memory
     IntArray a = int_array_make(5);
     // oh no, now both a and b own the memory
@@ -235,12 +235,12 @@ int main() {
           <section>
             <div class="fragment" style="text-align: left">
               <h4> Double free </h4>
-            Assim, usando os invariantes:
-            <ul>
-              <li> Para cada bloco de memória, existe apenas um dono*. </li>
-              <li> Apenas o dono de um bloco memória pode libertar o mesmo. </li>
-            </ul>
-            Podemos concluir ter a certeza que nunca existirá um "double free".
+              Assim, usando os invariantes:
+              <ul>
+                <li> Para cada bloco de memória, existe apenas um dono*. </li>
+                <li> Apenas o dono de um bloco memória pode libertar o mesmo. </li>
+              </ul>
+              Podemos concluir ter a certeza que nunca existirá um "double free".
             </div>
             <br>
             <div class="fragment" style="text-align: left">
@@ -254,6 +254,206 @@ int main() {
         </section>
         <section>
           <h1>Borrowing</h1>
+          <section>
+            <p class="fragment">
+            Mas <em>ownership</em> sozinha não chega para lidar com estes bugs,
+            é demasiado restritivo, e se precisar mos que várias partes do
+            código tenham acesso ao mesmo objecto? A óbvia resposta é usar um
+            pointer que é partilhado, mas isto também pode criar mais
+            <em>memory safety bugs</em>.
+            </p>
+            <p class="fragment">
+            Mas para além de "use after free" e "double free" há também outro
+            bug muito comum e ainda mais difícil de corrigir muitas vezes.
+            </p>
+            <p class="fragment">
+            Dangling pointers
+            </p>
+            <p class="fragment">
+            Dangling pointers são muito parecidos as "use after free" mas acho
+            que merecem a sua própria categoria.
+            </p>
+          </section>
+          <section>
+            <h2> Mas o que é um dangling pointer e como se fazem? </h2>
+            <p class="fragment">
+            Um dangling pointer em essência é um pointer que aponta para memória
+            que já não está alocada. Onde isto é diferente de um
+            <em>use after free</em>
+            </p>
+            <p class="fragment">
+            Dangling pointers de certa forma estão relacionados com
+            mutabilidade! Vamos começar com C mais uma vez.
+            </p>
+          </section>
+          <section data-auto-animate>
+            Vamos fazer um array dinâmico simples.
+
+            <pre class="lang-c" data-id="code-animation"><code data-trim>
+typedef struct {
+    int* values;
+    size_t capacity;
+    size_t used;
+} IntVec;
+            </code></pre>
+            <ul>
+              <li> <b>values</b>: Tem um pointer para os valores que o array guarda.</li>
+              <li> <b>used</b>: É quantos elementos tem. </li>
+              <li> <b>capacity</b>: Quanto espaço tem o array de values </li>
+            </ul>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c" data-id="code-animation">
+            <code data-trim data-line-numbers="15-16|8-9|10-11|12-13|7-17|1-1000">
+typedef struct {
+    int* values;
+    size_t capacity;
+    size_t used;
+} IntVec;
+
+void int_vec_push(IntVec* self, int value) {
+  // Caso o vector esteja cheio
+  if(self->capacity == self->used) {
+    // Duplicar a capacidade do vector
+    self->capacity = self->capacity == 0 ? 1 : self->capacity * 2;
+    // Realocar o array, usando agora o dobro da capacidade
+    self->values = realloc(self->values, sizeof(int) * self->capacity);
+  }
+  // Adicionar ao vector
+  self->values[self->used++] = value;
+}
+            </code></pre>
+            <p class="fragment">
+            A linha mais importante deste código e a 13. Nesta linha podemos ver
+            que o pointer <code>self->values</code> muda!
+            </p>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c" data-id="code-animation">
+            <code data-trim data-line-numbers="6|6-9|6-12|6-15|6-18|1-1000">
+typedef struct { int* values; size_t capacity, used; } IntVec;
+
+void int_vec_push(IntVec* self, int value);
+
+int main(void) {
+  IntVec v = int_vec_make();
+
+  // Fazemos push de um valor
+  int_vec_push(&v, 1); // isto realoca porque capacity(0) == used(0)
+
+  // Criamos um pointer para o primeiro valor do vector
+  int* first_value = &v.values[0];
+
+  // Fazemos push de mais um valor
+  int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos mais uma vez
+
+  // Tentamos alterar o primeiro valor do vector
+  *first_value = 42; // Seg Fault
+}
+            </code></pre>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c" data-id="code-animation">
+            <code data-trim data-line-numbers>
+typedef struct { int* values; size_t capacity, used; } IntVec;
+
+void int_vec_push(IntVec* self, int value);
+
+int main(void) {
+  IntVec v = int_vec_make();
+  // Fazemos push de um valor
+  int_vec_push(&v, 1); // isto realoca porque capacity(0) == used(0)
+  // Criamos um pointer para o primeiro valor do vector
+  int* first_value = &v.values[0];
+  // Fazemos push de mais um valor
+  int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos mais uma vez
+  // Tentamos alterar o primeiro valor do vector
+  *first_value = 42; // Seg Fault
+}
+            </code></pre>
+            Como podemos ver o <code>first_value</code> passa a ser um dangling
+            pointer depois da linha 12, e quando tentamos utilizá-lo mais a frente
+            o nosso programa crasha.
+          </section>
+          <section data-auto-animate>
+            Agora com Rust.
+            <pre class="lang-rust" data-id="code-animation">
+            <code data-trim data-noescape data-line-numbers>
+            type IntVec = Vec&lt;i32&gt;;
+            </code></pre>
+            Em Rust o array dinâmico já esta implementado, isto mais uma vez é
+            apenas um type alias para aproximar mais a C. Neste caso
+            <code>Vec&lt;i32&gt;</code> e o vector de inteiros de 32 bits, que
+            funciona de forma muito similar ao que implementamos em C.
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-rust" data-id="code-animation">
+            <code data-trim data-line-numbers="4|4-7|4-10|4-13|4-16|1-1000">
+            type IntVec = Vec&lt;i32&gt;;
+
+            fn main() {
+              let mut v = IntVec::new();
+
+              // Fazemos push de um valor
+              v.push(1);
+
+              // Criamos um pointer para o primeiro valor do vector
+              let first_value = &mut v[0];
+
+              // Fazemos push de mais um valor
+              v.push(2);
+
+              // Tentamos alterar o primeiro valor do vector
+              *first_value = 42;
+            }
+            </code></pre>
+          </section>
+          <section data-auto-animate data-background-color="#750b0b">
+            <div class="r-stack">
+              <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers>
+              type IntVec = Vec&lt;i32&gt;;
+
+              fn main() {
+                let mut v = IntVec::new();
+
+                // Fazemos push de um valor
+                v.push(1);
+
+                // Criamos um pointer para o primeiro valor do vector
+                let first_value = &mut v[0];
+
+                // Fazemos push de mais um valor
+                v.push(2);
+
+                // Tentamos alterar o primeiro valor do vector
+                *first_value = 42;
+              }
+              </code>
+              </pre>
+              <img src="img/multiple_mutable_borrows.png" />
+            </div>
+          </section>
+          <section data-auto-animate data-background-color="#750b0b">
+            <pre class="lang-rust" data-id="code-animation">
+              <code data-trim data-line-numbers>
+              type IntVec = Vec&lt;i32&gt;;
+
+              fn main() {
+                let mut v = IntVec::new();
+                // Fazemos push de um valor
+                v.push(1);
+                // Criamos um pointer para o primeiro valor do vector
+                let first_value = &mut v[0];
+                // Fazemos push de mais um valor
+                v.push(2);
+                // Tentamos alterar o primeiro valor do vector
+                *first_value = 42;
+              }
+              </code>
+            </pre>
+            <img src="img/multiple_mutable_borrows_short.png" />
+          </section>
         </section>
       </div>
     </div>
@@ -268,7 +468,6 @@ int main() {
       // - https://revealjs.com/config/
       Reveal.initialize({
               hash: true,
-
               // Learn about plugins: https://revealjs.com/plugins/
               plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
             });
