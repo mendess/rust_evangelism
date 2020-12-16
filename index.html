@@ -263,27 +263,38 @@ int main(void) {
             <em>memory safety bugs</em>.
             </p>
             <p class="fragment">
-            Mas para além de "use after free" e "double free" há também outro
-            bug muito comum e ainda mais difícil de corrigir muitas vezes.
+            Assumindo que nunca usamos este pointer para libertar memória,
+            podemos ter na mesma um "use after free" ou como é mais
+            comum chamar neste caso, um dangling pointer.
             </p>
             <p class="fragment">
-            Dangling pointers
-            </p>
-            <p class="fragment">
-            Dangling pointers são muito parecidos as "use after free" mas acho
-            que merecem a sua própria categoria.
+            Para resolver isto podemos pensar no conceito de borrowing.
+            Efectivamente o que o compilador previne é que enquanto um objecto
+            está emprestado, o dono não o pode alterar, incluindo libertar a
+            memória utilizada por este.
             </p>
           </section>
           <section>
-            <h2> Mas o que é um dangling pointer e como se fazem? </h2>
+            <h4>Há dois tipos de borrows em Rust:</h4>
+            <ul>
+              <li class="fragment" data-fragment-index="1"><b>shared</b> (ou <b>immutable</b>):
+                <span class="fragment" data-fragment-index="3">
+                  Podem existir qualquer número de shared borrows, para um
+                  determinado objecto, mas não podem haver exclusive borrows
+                  simultâneos.
+                </span>
+              </li>
+              <li class="fragment" data-fragment-index="2"><b>exclusive</b> (ou <b>mutable</b>):
+                <span class="fragment" data-fragment-index="4">
+                  Em qualquer ponto do código se existe um exclusive
+                  borrow, não pode existir mais nenhum borrow, shared ou
+                  exclusive.
+                </span>
+              </li>
+            </ul>
             <p class="fragment">
-            Um dangling pointer em essência é um pointer que aponta para memória
-            que já não está alocada. Onde isto é diferente de um
-            <em>use after free</em>
-            </p>
-            <p class="fragment">
-            Dangling pointers de certa forma estão relacionados com
-            mutabilidade! Vamos começar com C mais uma vez.
+            Isto é tudo um bocado abstracto, por isso vamos ver mais um exemplo
+            da utilidade disto, começando mais uma vez com C
             </p>
           </section>
           <section data-auto-animate>
@@ -304,7 +315,7 @@ typedef struct {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-            <code data-trim data-line-numbers="15-16|8-9|10-11|12-13|7-17|1-1000">
+            <code data-trim data-line-numbers="8-9|10-11|12-13|15-16|7-17|1-1000">
 typedef struct {
     int* values;
     size_t capacity;
@@ -434,25 +445,30 @@ int main(void) {
               <img src="img/multiple_mutable_borrows.png" />
             </div>
           </section>
-          <section data-auto-animate data-background-color="#750b0b">
-            <pre class="lang-rust" data-id="code-animation">
-              <code data-trim data-line-numbers>
-              type IntVec = Vec&lt;i32&gt;;
+          <section data-auto-animate>
+            <div class="r-stack">
+              <div style="width:100%">
+                <pre class="lang-rust" data-id="code-animation">
+                  <code data-trim data-line-numbers>
+                  type IntVec = Vec&lt;i32&gt;;
 
-              fn main() {
-                let mut v = IntVec::new();
-                // Fazemos push de um valor
-                v.push(1);
-                // Criamos um pointer para o primeiro valor do vector
-                let first_value = &mut v[0];
-                // Fazemos push de mais um valor
-                v.push(2);
-                // Tentamos alterar o primeiro valor do vector
-                *first_value = 42;
-              }
-              </code>
-            </pre>
-            <img src="img/multiple_mutable_borrows_short.png" />
+                  fn main() {
+                    let mut v = IntVec::new();
+                    // Fazemos push de um valor
+                    v.push(1);
+                    // Criamos um pointer para o primeiro valor do vector
+                    let first_value = &mut v[0];
+                    // Fazemos push de mais um valor
+                    v.push(2);
+                    // Tentamos alterar o primeiro valor do vector
+                    *first_value = 42;
+                  }
+                  </code>
+                </pre>
+                <img src="img/multiple_mutable_borrows_short.png" />
+              </div>
+              <img src="img/vec_push_signature.png"/>
+            </div>
           </section>
         </section>
       </div>
