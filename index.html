@@ -30,53 +30,67 @@
 
             Esta talk não é um tutorial de Rust!
 
-            Esta talk é eu a falar das partes que eu mais gosto da linguagem
-            para mostrar o que é Rust and _what is the hype all about_.
-
+            É apenas uma demonstração das features que acho mais
+            interessantes da linguagem.
           </textarea>
         </section>
         <section>
           <h1>O que é Rust?</h1>
-          <section data-markdown>
-            <textarea data-template>
-              Rust é uma _systems programming language_, isto quer dizer que é
-              uma linguagem que permite ter um controlo de baixo nível do
-              hardware e recursos da máquina.
-
-              As duas linguagens mais conhecidas neste campo são C e C++.
-            </textarea>
+          <section>
+            Rust é uma <em>systems programming language</em>, ou seja, permite
+            ter um controlo de baixo nível do hardware e recursos da máquina.
+            <br>
+            As duas linguagens mais conhecidas neste campo são
+            <img
+              style='vertical-align:middle;'
+              src="img/c.png"
+              alt="C"
+              height="40em"/>
+            e
+            <img
+              style='vertical-align:middle;'
+              src="img/cpp.png"
+              alt="C++"
+              height="40em"/>.
           </section>
           <section>
-            <h2>Porquê fazer uma linguagem nova</h2>
+            <h3>Porquê fazer uma linguagem nova?</h3>
 
-            C, C++ são linguagens que dão muito poder e controlo a quem as usa,
-            deixam controlar todos os detalhes. Mas...
-            <div class="fragment">
-              <blockquote>
-                With great power, comes great responsibility
-              </blockquote>
-              <p style="text-align: right"> – Spider Man probably</p>
-            </div>
+            <img
+              style='vertical-align:middle;'
+              src="img/c.png"
+              alt="C"
+              height="40em"/>,
+              <img
+                style='vertical-align:middle;'
+                src="img/cpp.png"
+                alt="C++"
+                height="40em"/>
+              são linguagens que dão muito poder e controlo
+              a quem as usa,
+              deixam controlar todos os detalhes. Mas...
+              <div class="fragment">
+                <blockquote>
+                  With great power, comes great responsibility
+                </blockquote>
+                <p style="text-align: right"> – Spider Man probably</p>
+              </div>
           </section>
-        </section>
-        <section>
-          <h1>Ownership</h1>
           <section>
             Qual é o principal dificuldade de trabalhar com estas linguagens?
             <span class="fragment">Gestão de memória.</span>
 
-            <div class="fragment">
-              Quem é aqui adora esta mensagem de erro?
-              <pre> Segmentation fault (core dumped) </pre>
-            </div>
-            <div class="fragment">
-              E se houvesse uma linguagem em que não e possível* compilar sequer
+            <pre class="fragment"> Segmentation fault (core dumped) </pre>
+
+            <aside class="notes">
+              E se houvesse uma linguagem lowlevel em que não e possível*
+              compilar sequer
               código que pode dar segmentation fault?
-            </div>
-
-            <div class="fragment"><em>mas como?</em></div>
-
+            </aside>
           </section>
+        </section>
+        <section>
+          <h1>Ownership</h1>
           <section>
             <em>Ownership</em> é um dos <em>mental models</em> que podemos
             utilizar para conseguir evitar um conjunto de bugs como "double
@@ -89,10 +103,12 @@
             </div>
           </section>
           <section data-auto-animate>
-            Para vermos este conceito em ação vamos escrever um pouco de C
-            onde estas garantias não existem.
-            <br>
-            Começando por fazer um array dinâmico simples.
+            Começando por fazer um array dinâmico simples em
+            <img
+              style='vertical-align:middle;'
+              src="img/c.png"
+              alt="C"
+              height="40em"/>
 
             <pre class="lang-c" data-id="code-animation"><code data-trim>
 typedef struct {
@@ -109,6 +125,10 @@ typedef struct {
               <li> <b>used</b>: É quantos elementos tem. </li>
               <li> <b>capacity</b>: Quanto espaço tem o array de values </li>
             </ul>
+            <aside class="notes">
+              Para vermos este conceito em ação vamos escrever um pouco de C
+              onde estas garantias não existem.
+            </aside>
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
@@ -152,23 +172,54 @@ int main(void) {
     // a's memory is dropped/freed
     int_vec_drop(a);
     // use after free because there were two "owners"
-    printf("%d\n", b.values[1]); // Seg Fault
+    printf("%d\n", b.values[1]);
 }
             </code></pre>
-            <p class="fragment">
-            Nao correu muito bem, vamos ver como é que Rust impede que isto
-            aconteça.
-            </p>
+          </section>
+          <section data-auto-animate data-background-color="#750b0b">
+            <pre class="lang-c" data-id="code-animation">
+              <code data-trim data-line-numbers="1-17">
+IntVec int_vec_make(size_t initial_cap) {
+  return (IntVec) {.capacity = initial_cap, .used = 0,
+                     .values = malloc(sizeof(int) * initial_cap)};
+}
+
+void int_vec_drop(IntVec a) { free(a.values); }
+
+int main(void) {
+    // a owns the memory
+    IntVec a = int_vec_make(5);
+    // oh no, now both a and b own the memory
+    IntVec b = a;
+    // a's memory is dropped/freed
+    int_vec_drop(a);
+    // use after free because there were two "owners"
+    printf("%d\n", b.values[1]); // SEGMENTATION FAULT
+}
+            </code></pre>
+            <aside class="notes">
+              Nao correu muito bem, vamos ver como é que Rust impede que isto
+              aconteça.
+            </aside>
           </section>
           <section data-auto-animate>
-            Vamos partir do mesmo ponto. Um array dinâmico, em Rust chama-se
-            vector e já está implementado.
+            Vamos partir do mesmo ponto.
+            <br>
+            Um array dinâmico, em Rust chama-se vector e já está implementado.
             <pre class="lang-rust" data-id="code-animation">
               <code style="text-align: center; font-size: 28px">
 Vec&lt;i32&gt;</code>
             </pre>
-            Este tipo é equivalente ao tipo em C, é apenas um
-            <tt>pointer</tt>, <tt>capacity</tt>, e <tt>used</tt>.
+            Este tipo é equivalente ao IntVec de
+            <img
+            style='vertical-align:middle;'
+            src="img/c.png"
+            alt="C"
+            height="40em"/>
+
+            <aside class="notes">
+            É um pointer, capacity, e used.
+            </aside>
             <br>
           </section>
           <section data-auto-animate>
@@ -182,9 +233,12 @@ Vec&lt;i32&gt;</code>
                 }
               </code>
             </pre>
-            <p class="fragment"> Agora vamos tentar criar o mesmo erro. </p>
+            <aside class="notes">
+              Explicar syntax
+            </aside>
           </section>
           <section data-auto-animate>
+            Agora vamos tentar criar o mesmo erro.
             <pre class="lang-rust" data-id="code-animation">
               <code data-trim data-line-numbers="4-6|4-9">
                 fn main() {
@@ -265,17 +319,48 @@ Vec&lt;i32&gt;</code>
           </section>
         </section>
         <section>
-          <h1>Borrowing</h1>
+          <h1>Lifetimes</h1>
           <section>
             <p class="fragment">
-            Mas <em>ownership</em> sozinha não chega para criar uma linguagem
-            usável. Ás vezes é necessário partilhar um objecto por varias partes
-            do nosso código.
+            Isto é um pouco restritivo
+            <br>
+            E se quisermos partilhar um objecto por varias
+            partes do codigo?
             </p>
             <p class="fragment">
-            Mas se o pointer existir mais tempo que objecto para que aponta,
-            temos um "use after free", aka, um dangling pointer.
+            Pointers?
             </p>
+            <p class="fragment">
+            Mas assim introduzimos "use after free" bugs outra vez...
+            </p>
+            <aside class="notes">
+              <p>
+              Mas <em>ownership</em> sozinha não chega para criar uma linguagem
+              usável. Ás vezes é necessário partilhar um objecto por varias
+              partes do nosso código.
+              </p>
+              <p>
+              Mas se o pointer existir mais tempo que objecto para que aponta,
+              temos um "use after free", aka, um dangling pointer.
+              </p>
+            </aside>
+          </section>
+          <section>
+            <b>Lifetime:</b> Região do programa em que um dado objecto existe.
+            <br>
+            <br>
+            <br>
+            Portanto isto é """simples""" um pointer/referencia nunca pode
+            existir mais "tempo" do que o objecto para que aponta.
+          </section>
+          <section>
+            <h3>Undefined Behaviour</h3>
+
+          </section>
+        </section>
+        <section>
+          <h1>Borrowing</h1>
+          <section>
           </section>
           <section>
             <h4>Há dois tipos de borrows em Rust:</h4>
@@ -287,7 +372,7 @@ Vec&lt;i32&gt;</code>
                 <div class="fragment" data-fragment-index="3">
                   Podem existir qualquer número de shared borrows para um
                   determinado objecto, e 0 exclusive.
-                </span>
+                  </span>
               </li>
               <li
                 class="fragment"
@@ -296,9 +381,13 @@ Vec&lt;i32&gt;</code>
                 <div class="fragment" data-fragment-index="4">
                   Em qualquer ponto do código só pode existir um exclusive
                   borrow activo.
-                </span>
+                  </span>
               </li>
             </ul>
+            <aside class="notes">
+              Mas isto é muito abstrato, vamos ver um exemplo na nossa trusty C
+              language.
+            </aside>
           </section>
           <section data-auto-animate>
             Vamos continuar a utilizar o array dinâmico da secção anterior.
@@ -339,7 +428,7 @@ void int_vec_push(IntVec* self, int value) {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-            <code data-trim data-line-numbers="6|6-9|6-12|6-15|6-18|1-1000">
+            <code data-trim data-line-numbers="6|6-9|6-12|6-15|6-18|1-19">
 typedef struct { int* values; size_t capacity, used; } IntVec;
 
 void int_vec_push(IntVec* self, int value);
@@ -357,7 +446,31 @@ int main(void) {
   int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
 
   // Tentamos alterar o primeiro valor do vector
-  *first_value_ptr = 42; // Seg Fault
+  *first_value_ptr = 42;
+}
+            </code></pre>
+          </section>
+          <section data-auto-animate data-background-color="#750b0b">
+            <pre class="lang-c" data-id="code-animation">
+            <code data-trim data-line-numbers="1-19">
+typedef struct { int* values; size_t capacity, used; } IntVec;
+
+void int_vec_push(IntVec* self, int value);
+
+int main(void) {
+  IntVec v = int_vec_make(0);
+
+  // Fazemos push de um valor
+  int_vec_push(&v, 1); // isto realoca porque capacity(0) == used(0)
+
+  // Criamos um pointer para o primeiro valor do vector
+  int* first_value_ptr = &v.values[0];
+
+  // Fazemos push de mais um valor
+  int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
+
+  // Tentamos alterar o primeiro valor do vector
+  *first_value_ptr = 42; // SEGMENTATION FAULT
 }
             </code></pre>
           </section>
@@ -377,12 +490,12 @@ int main(void) {
   // Fazemos push de mais um valor
   int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
   // Tentamos alterar o primeiro valor do vector
-  *first_value_ptr = 42; // Seg Fault
+  *first_value_ptr = 42; // SEGMENTATION FAULT
 }
             </code></pre>
-            Como podemos ver o <code>first_value</code> passa a ser um dangling
-            pointer depois da linha 12, e quando tentamos utilizá-lo mais a
-            frente o nosso programa crasha.
+            Como podemos ver o <code>first_value_ptr</code> passa a ser um
+            dangling pointer depois da linha 12, e quando tentamos utilizá-lo
+            mais a frente o nosso programa crasha.
           </section>
           <section data-auto-animate>
             <pre class="lang-rust" data-id="code-animation">
@@ -450,24 +563,28 @@ int main(void) {
               </div>
               <img class="fragment" src="img/vec_push_signature.png"/>
             </div>
+            <aside class="notes">
+              Memory corruption
+            </aside>
           </section>
         </section>
-      </div>
-    </div>
+        </section>
+                </div>
+                </div>
 
-    <script src="dist/reveal.js"></script>
-    <script src="plugin/notes/notes.js"></script>
-    <script src="plugin/markdown/markdown.js"></script>
-    <script src="plugin/highlight/highlight.js"></script>
-    <script>
-      // More info about initialization & config:
-      // - https://revealjs.com/initialization/
-      // - https://revealjs.com/config/
-      Reveal.initialize({
-              hash: true,
-              // Learn about plugins: https://revealjs.com/plugins/
-              plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-            });
-    </script>
+                <script src="dist/reveal.js"></script>
+                <script src="plugin/notes/notes.js"></script>
+                <script src="plugin/markdown/markdown.js"></script>
+                <script src="plugin/highlight/highlight.js"></script>
+                <script>
+                  // More info about initialization & config:
+                  // - https://revealjs.com/initialization/
+                  // - https://revealjs.com/config/
+                  Reveal.initialize({
+                                      hash: true,
+                                      // Learn about plugins: https://revealjs.com/plugins/
+                                      plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+                                    });
+                </script>
   </body>
 </html>
