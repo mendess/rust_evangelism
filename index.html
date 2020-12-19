@@ -56,25 +56,17 @@
           <section>
             <h3>Porquê fazer uma linguagem nova?</h3>
 
-            <img
-              style='vertical-align:middle;'
-              src="img/c.png"
-              alt="C"
-              height="40em"/>,
-              <img
-                style='vertical-align:middle;'
-                src="img/cpp.png"
-                alt="C++"
-                height="40em"/>
-              são linguagens que dão muito poder e controlo
-              a quem as usa,
-              deixam controlar todos os detalhes. Mas...
-              <div class="fragment">
-                <blockquote>
-                  With great power, comes great responsibility
-                </blockquote>
-                <p style="text-align: right"> – Spider Man probably</p>
-              </div>
+            <img style='vertical-align:middle;' src="img/c.png" alt="C" height="40em"/>,
+            <img style='vertical-align:middle;' src="img/cpp.png" alt="C++" height="40em"/>
+            são linguagens que dão muito poder e controlo
+            a quem as usa,
+            deixam controlar todos os detalhes. Mas...
+            <div class="fragment">
+              <blockquote>
+                With great power, comes great responsibility
+              </blockquote>
+              <p style="text-align: right"> – Spider Man probably</p>
+            </div>
           </section>
           <section>
             Qual é o principal dificuldade de trabalhar com estas linguagens?
@@ -132,7 +124,7 @@ typedef struct {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-              <code data-trim data-line-numbers="7-10|7-12|7-16|7-18|1-1000">
+              <code data-trim data-line-numbers="7-10|7-12|7-16|7-18|1-19">
 typedef struct {
     int* values;
     size_t capacity;
@@ -212,19 +204,19 @@ Vec&lt;i32&gt;</code>
             </pre>
             Este tipo é equivalente ao IntVec de
             <img
-            style='vertical-align:middle;'
-            src="img/c.png"
-            alt="C"
-            height="40em"/>
+              style='vertical-align:middle;'
+              src="img/c.png"
+              alt="C"
+              height="40em"/>
 
             <aside class="notes">
-            É um pointer, capacity, e used.
+              É um pointer, capacity, e used.
             </aside>
             <br>
           </section>
           <section data-auto-animate>
             <pre class="lang-rust" data-id="code-animation">
-              <code data-trim data-line-numbers="2-3|4-5|1-1000">
+              <code data-trim data-line-numbers="2-3|4-5|1-6">
                 fn main() {
                   // a owns the memory
                   let a: Vec&lt;i32&gt; = Vec::with_capacity(5);
@@ -384,7 +376,7 @@ Vec&lt;i32&gt;</code>
               <pre class="lang-c fragment" data-id="code-animation">
               <code data-trim data-line-numbers>
               <script type="text/template">
-                  int foo() {
+                int foo() {
                     int* i;
                     {
                       int x = 42;
@@ -486,15 +478,15 @@ Vec&lt;i32&gt;</code>
               </code>
             </pre>
             <a class="fragment"
-              href="https://www.felixcloutier.com/x86/ud">? ud2 ?</a>
-          <aside class="notes">
-            ud2 e uma instrução de assembly invalida, de certa forma e um
-            Segmentation Fault hardcoded no programa. Tal como disse antes o
-            compilador pode fazer o que bem entende quando encontra UB
+               href="https://www.felixcloutier.com/x86/ud">? ud2 ?</a>
+            <aside class="notes">
+              ud2 e uma instrução de assembly invalida, de certa forma e um
+              Segmentation Fault hardcoded no programa. Tal como disse antes o
+              compilador pode fazer o que bem entende quando encontra UB
 
-            Mais uma vez, isto e um bug que Rust simplesmente não permite,
-            fazendo uso de lifetimes.
-          </aside>
+              Mais uma vez, isto e um bug que Rust simplesmente não permite,
+              fazendo uso de lifetimes.
+            </aside>
           </section>
           <section data-auto-animate>
             <pre class="lang-rust">
@@ -574,7 +566,7 @@ typedef struct {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-            <code data-trim data-line-numbers="1-1000|7-9|7-11|7-13|7-16|1-1000">
+            <code data-trim data-line-numbers="1-17|7-9|7-11|7-13|7-16|1-17">
 typedef struct {
     int* values;
     size_t capacity;
@@ -646,9 +638,9 @@ int main(void) {
 }
             </code></pre>
             <aside class="notes">
-            Como podemos ver o <code>first_value_ptr</code> passa a ser um
-            dangling pointer depois da linha 12, e quando tentamos utilizá-lo
-            mais a frente o nosso programa crasha.
+              Como podemos ver o <code>first_value_ptr</code> passa a ser um
+              dangling pointer depois da linha 12, e quando tentamos utilizá-lo
+              mais a frente o nosso programa crasha.
             </aside>
           </section>
           <section data-auto-animate>
@@ -748,6 +740,19 @@ int main(void) {
             </aside>
           </section>
         </section>
+        <section data-autoslide="1000">
+          <h1>E muito mais...</h1>
+          <p class="fragment"><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Zero cost abstractions</a></p>
+          <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch13-02-iterators.html">Iterators</a></p>
+          <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch16-00-concurrency.html">Safe concurrency</a></p>
+          <p class="fragment"><a href="https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts">Zero Sized Types</a></p>
+          <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch10-02-traits.html">Traits</a></p>
+          <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch06-01-defining-an-enum.html">Tagged unions/Sum types/Enums</a></p>
+          <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch18-00-patterns.html#patterns-and-matching">Pattern Matching</a></p>
+          <p class="fragment">
+          <img style="vertical-align:middle;" src="https://doc.rust-lang.org/stable/book/img/ferris/unsafe.svg" height="40em"/>
+          <a href="https://doc.rust-lang.org/nomicon/index.html"><em><b>Unsafe</b></em></a>
+          </p>
         </section>
                 </div>
                 </div>
