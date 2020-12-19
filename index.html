@@ -354,8 +354,184 @@ Vec&lt;i32&gt;</code>
             existir mais "tempo" do que o objecto para que aponta.
           </section>
           <section>
+            Podemos pensar que as <tt>{}</tt> delimitam o <em>lifetime</em> de
+            um objecto
+            <div class="r-stack">
+              <pre class="lang-c" data-id="code-animation">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                int foo() {
+                  int* i; // lifetime of i starts here
+                  {
+                    int x = 42; // lifetime of x starts here
+                    i = &x;
+                  } // lifetime of x ends here
+                  return *i;
+                } // lifetime of i ends here
+              </script>
+              </code>
+              </pre>
+              <pre class="lang-c fragment" data-id="code-animation">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                int foo() {
+                  int* i;       // 'i
+                  {             // 'i
+                    int x = 42; // 'i 'x
+                    i = &x;     // 'i 'x
+                  }             // 'i
+                  return *i;    // 'i
+                }
+              </script>
+              </code>
+              </pre>
+              <pre class="lang-c fragment" data-id="code-animation">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                  int foo() {
+                    int* i;
+                    {
+                      int x = 42;
+                      i = &x;
+                    }
+                    return *i; // Undefined behaviour
+                  }
+              </script>
+              </code>
+              </pre>
+            </div>
+          </section>
+          <section>
             <h3>Undefined Behaviour</h3>
+            <p>
+            Algumas "construções" são consideradas UB pelo standard de
+            C e o compilador tem a liberdade fazer o que quiser com o programa
+            assim que encontra UB.
+            </p>
 
+            <div class="fragment">
+              <p>
+              Por exemplo, em <tt>gcc version 10.2.0</tt> compilar o programa
+              anterior, com <tt>-O2</tt>, resulta no seguinte assembly para a
+              função <tt>foo</tt>.
+              </p>
+              <pre class="lang-asm">
+            <code data-trim>
+            xor %eax,%eax
+            retq
+              </code></pre>
+            </div>
+            <aside class="notes">
+              Mas isto ainda fica pior! Vamos ver ainda outro exemplo.
+            </aside>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                int* foo() {
+                  int* a[] = {1,2,3}; // lifetime of `a` starts
+                  return a;
+                } // lifetime of `a` ends
+                int main() {
+                  int* a = foo();
+                  printf("%d,%d,%d\n", a[0], a[1], a[2]);
+                }
+              </script>
+              </code>
+            </pre>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                int* foo() {
+                  int* a[] = {1,2,3}; // lifetime of `a` starts
+                  return a;
+                } // lifetime of `a` starts
+                int main() {
+                  int* a = foo();
+                  printf("%d,%d,%d\n", a[0], a[1], a[2]);
+                }
+              </script>
+              </code>
+            </pre>
+            <pre class="lang-asm" data-id="code-animation">
+              <code data-trim>
+              &lt;foo&gt;:
+                xor %eax,%eax
+                retq
+              </code>
+            </pre>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-c">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                int* foo() {
+                  int* a[] = {1,2,3}; // lifetime of `a` starts
+                  return a;
+                } // lifetime of `a` ends
+                int main() {
+                  int* a = foo();
+                  printf("%d,%d,%d\n", a[0], a[1], a[2]);
+                }
+              </script>
+              </code>
+            </pre>
+            <pre class="lang-asm" data-id="code-animation">
+              <code data-trim>
+              &lt;foo&gt;:
+                xor %eax,%eax
+                retq
+              &lt;main&gt;:
+                mov 0x0,%eax
+                ud2
+              </code>
+            </pre>
+            <a class="fragment"
+              href="https://www.felixcloutier.com/x86/ud">? ud2 ?</a>
+          <aside class="notes">
+            ud2 e uma instrução de assembly invalida, de certa forma e um
+            Segmentation Fault hardcoded no programa. Tal como disse antes o
+            compilador pode fazer o que bem entende quando encontra UB
+
+            Mais uma vez, isto e um bug que Rust simplesmente não permite,
+            fazendo uso de lifetimes.
+          </aside>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-rust">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                fn main() {
+                  let i;
+                  {
+                    let x = 42;
+                    i = &x;
+                  }
+                  println!("{}", *i);
+                }
+              </script>
+              </code>
+            </pre>
+          </section>
+          <section data-auto-animate>
+            <pre class="lang-rust">
+              <code data-trim data-line-numbers>
+              <script type="text/template">
+                fn main() {
+                  let i;
+                  {
+                    let x = 42;
+                    i = &x;
+                  }
+                  println!("{}", *i);
+                }
+              </script>
+              </code>
+            </pre>
+            <img src="img/lifetimes0.png"/>
           </section>
         </section>
         <section>
