@@ -156,7 +156,7 @@ int main(void) {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-              <code data-trim data-line-numbers="11-12|11-14|11-16|1-1000">
+              <code data-trim data-line-numbers="11-12|11-14|11-16">
 IntVec int_vec_make(size_t initial_cap) {
   return (IntVec) {.capacity = initial_cap, .used = 0,
                      .values = malloc(sizeof(int) * initial_cap)};
@@ -292,28 +292,24 @@ Vec&lt;i32&gt;</code>
           </section>
           <section>
             <div style="text-align: left">
-              <h4 class="fragment" data-fragment-index="1"> Double free </h4>
+              <h4 class="fragment" data-fragment-index="1"> Como é que Rust previne estes bugs ?  </h4>
+              <h4 class="fragment" data-fragment-index="2"> Double free </h4>
               <div class="fragment" data-fragment-index="3">
-                Assim, usando os invariantes:
                 <ul>
-                  <li> Para cada bloco de memória, existe apenas um dono*. </li>
+                  <li> Para cada bloco de memória, existe apenas um dono. </li>
                   <li>
                     Apenas o dono de um bloco memória pode libertar o mesmo.
                   </li>
                 </ul>
-                Podemos concluir ter a certeza que nunca existirá um "double
-                free".
               </div>
             </div>
             <br>
             <div style="text-align: left">
-              <h4 class="fragment" data-fragment-index="2"> Use after free </h4>
-              <div class="fragment" data-fragment-index="4">
+              <h4 class="fragment" data-fragment-index="4"> Use after free </h4>
+              <div class="fragment" data-fragment-index="5">
                 Sempre que a <em>ownership</em> de um bloco de memória é passada
                 de uma variável para outra, a antiga fica num estado
                 inutilizável, e o compilador garante que não será mais acedida.
-                Isto em conjunto com a anterior garante que não podem usar "use
-                after free" bugs.
               </div>
             </div>
           </section>
@@ -649,29 +645,11 @@ int main(void) {
   *first_value_ptr = 42; // SEGMENTATION FAULT
 }
             </code></pre>
-          </section>
-          <section data-auto-animate>
-            <pre class="lang-c" data-id="code-animation">
-            <code data-trim data-line-numbers>
-typedef struct { int* values; size_t capacity, used; } IntVec;
-
-void int_vec_push(IntVec* self, int value);
-
-int main(void) {
-  IntVec v = int_vec_make(0);
-  // Fazemos push de um valor
-  int_vec_push(&v, 1); // isto realoca porque capacity(0) == used(0)
-  // Criamos um pointer para o primeiro valor do vector
-  int* first_value_ptr = &v.values[0];
-  // Fazemos push de mais um valor
-  int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
-  // Tentamos alterar o primeiro valor do vector
-  *first_value_ptr = 42; // SEGMENTATION FAULT
-}
-            </code></pre>
+            <aside class="notes">
             Como podemos ver o <code>first_value_ptr</code> passa a ser um
             dangling pointer depois da linha 12, e quando tentamos utilizá-lo
             mais a frente o nosso programa crasha.
+            </aside>
           </section>
           <section data-auto-animate>
             <pre class="lang-rust" data-id="code-animation">
@@ -738,6 +716,32 @@ int main(void) {
                 <img src="img/multiple_mutable_borrows_short.png" />
               </div>
               <img class="fragment" src="img/vec_push_signature.png"/>
+            </div>
+            <aside class="notes">
+              Memory corruption
+            </aside>
+          </section>
+          <section data-auto-animate>
+            <div class="r-stack">
+              <div style="width:100%">
+                <pre class="lang-rust" data-id="code-animation">
+                  <code data-trim data-line-numbers="1-11">
+                  fn main() {
+                    let mut v = Vec::new();
+                    // Fazemos push de um valor
+                    Vec::push(&mut v, 1); // equivalente a v.push(1);
+                    // Criamos um pointer para o primeiro valor do vector
+                    let first_value_ptr = &mut v[0];
+                    // Fazemos push de mais um valor
+                    Vec::push(&mut v, 2); // equivalente a v.push(2);
+                    // Tentamos alterar o primeiro valor do vector
+                    *first_value_ptr = 42;
+                  }
+                  </code>
+                </pre>
+                <img src="img/multiple_mutable_borrows_short.png" />
+              </div>
+              <img src="img/vec_push_signature.png"/>
             </div>
             <aside class="notes">
               Memory corruption
