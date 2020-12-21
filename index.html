@@ -21,8 +21,19 @@
       <div class="slides">
         <section>
           <h1 class="title">Rust Evangelism</h1>
-          <p class="subtitle">🦀</p>
+          <p class="subtitle">
+          <img
+            style='vertical-align:middle;'
+            src="img/rust.png"
+            alt="C"
+            height="150em"/>
+          </p>
           <p class="author">Pedro Mendes</p>
+          <img
+            style='vertical-align:middle;'
+            src="img/ferris.png"
+            alt="C"
+            height="80em"/>
         </section>
         <section data-markdown>
           <textarea data-template>
@@ -30,8 +41,8 @@
 
             Esta talk não é um tutorial de Rust!
 
-            É apenas uma demonstração das features que acho mais
-            interessantes da linguagem.
+            É apenas uma demonstração das features que mais inovadoras da
+            linguagem.
           </textarea>
         </section>
         <section>
@@ -186,7 +197,7 @@ int main(void) {
     // a's memory is dropped/freed
     int_vec_drop(a);
     // use after free because there were two "owners"
-    printf("%d\n", b.values[1]); // SEGMENTATION FAULT
+    printf("%d\n", b.values[1]); // Undefined behaviour
 }
             </code></pre>
             <aside class="notes">
@@ -377,13 +388,13 @@ Vec&lt;i32&gt;</code>
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int foo() {
-                    int* i;
-                    {
-                      int x = 42;
-                      i = &x;
-                    }
-                    return *i; // Undefined behaviour
+                  int* i;
+                  {
+                    int x = 42;
+                    i = &x;
                   }
+                  return *i; // Undefined behaviour
+                }
               </script>
               </code>
               </pre>
@@ -418,11 +429,11 @@ Vec&lt;i32&gt;</code>
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int* foo() {
-                  int* a[] = {1,2,3}; // lifetime of `a` starts
+                  int a[] = {1,2,3}; // lifetime of `a` starts
                   return a;
                 } // lifetime of `a` ends
                 int main() {
-                  int* a = foo();
+                  int a = foo();
                   printf("%d,%d,%d\n", a[0], a[1], a[2]);
                 }
               </script>
@@ -434,11 +445,11 @@ Vec&lt;i32&gt;</code>
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int* foo() {
-                  int* a[] = {1,2,3}; // lifetime of `a` starts
+                  int a[] = {1,2,3}; // lifetime of `a` starts
                   return a;
                 } // lifetime of `a` starts
                 int main() {
-                  int* a = foo();
+                  int a = foo();
                   printf("%d,%d,%d\n", a[0], a[1], a[2]);
                 }
               </script>
@@ -457,11 +468,11 @@ Vec&lt;i32&gt;</code>
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int* foo() {
-                  int* a[] = {1,2,3}; // lifetime of `a` starts
+                  int a[] = {1,2,3}; // lifetime of `a` starts
                   return a;
                 } // lifetime of `a` ends
                 int main() {
-                  int* a = foo();
+                  int a = foo();
                   printf("%d,%d,%d\n", a[0], a[1], a[2]);
                 }
               </script>
@@ -525,27 +536,40 @@ Vec&lt;i32&gt;</code>
         <section>
           <h1>Borrowing</h1>
           <section>
+            Em Rust um pointer ou referência é normalmente chamado e um
+            <em>borrow</em>.
+            <br>
+            <br>
+            <br>
+            Tal como temos variáveis que são "donas" (owners) de coisas estas
+            coisas também podem ser "emprestadas" (borrowed).
+            <aside class="notes">
+              E quando se empresta algo é má educação estragar o que pedimos
+              emprestado.
+            </aside>
           </section>
           <section>
             <h4>Há dois tipos de borrows em Rust:</h4>
             <ul>
-              <li
-                class="fragment"
-                data-fragment-index="1">
+              <li class="fragment" >
                 <b>shared</b> (ou <b>immutable</b>):
-                <div class="fragment" data-fragment-index="3">
-                  Podem existir qualquer número de shared borrows para um
-                  determinado objecto, e 0 exclusive.
-                  </span>
               </li>
-              <li
-                class="fragment"
-                data-fragment-index="2">
+              <li class="fragment">
                 <b>exclusive</b> (ou <b>mutable</b>):
-                <div class="fragment" data-fragment-index="4">
-                  Em qualquer ponto do código só pode existir um exclusive
-                  borrow activo.
-                  </span>
+              </li>
+            </ul>
+            <br>
+            <br>
+            <h4 class="fragment">E há duas regras para estes:</h4>
+            <p class="fragment" style="text-align: left">Em qualquer ponto do programa...  </p>
+            <ul>
+              <li class="fragment">
+                ... podem existir qualquer número de <b>shared borrows</b> para um
+                determinado objecto e nenhum <b>exclusive borrow</b>.
+              </li>
+              <li class="fragment">
+                ... se existe um <b>exclusive borrow</b> para um objecto, não
+                pode haver mais nenhum <em>borrow</em> de qualquer tipo.
               </li>
             </ul>
             <aside class="notes">
@@ -577,7 +601,7 @@ void int_vec_push(IntVec* self, int value) {
   // Caso o vector esteja cheio
   if(self->capacity == self->used) {
     // Duplicar a capacidade do vector
-    self->capacity *= 2;
+    self->capacity = self->capacity ? self->capacity * 2 : 1;
     // Realocar o array, usando agora o dobro da capacidade
     self->values = realloc(self->values, sizeof(int) * self->capacity);
   }
@@ -634,7 +658,7 @@ int main(void) {
   int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
 
   // Tentamos alterar o primeiro valor do vector
-  *first_value_ptr = 42; // SEGMENTATION FAULT
+  *first_value_ptr = 42; // Undefined behaviour
 }
             </code></pre>
             <aside class="notes">
@@ -740,7 +764,7 @@ int main(void) {
             </aside>
           </section>
         </section>
-        <section data-autoslide="1000">
+        <section data-autoslide="1000" data-auto-animate>
           <h1>E muito mais...</h1>
           <p class="fragment"><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Zero cost abstractions</a></p>
           <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch13-02-iterators.html">Iterators</a></p>
@@ -754,22 +778,44 @@ int main(void) {
           <a href="https://doc.rust-lang.org/nomicon/index.html"><em><b>Unsafe</b></em></a>
           </p>
         </section>
-                </div>
-                </div>
+        <section data-autoslide="1000" data-auto-animate>
+          <h1>E muito mais...</h1>
+          <div style="display: flex">
+            <div>
+              <p><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Zero cost abstractions</a></p>
+              <p><a href="https://doc.rust-lang.org/stable/book/ch13-02-iterators.html">Iterators</a></p>
+              <p><a href="https://doc.rust-lang.org/stable/book/ch16-00-concurrency.html">Safe concurrency</a></p>
+              <p><a href="https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts">Zero Sized Types</a></p>
+              <p><a href="https://doc.rust-lang.org/stable/book/ch10-02-traits.html">Traits</a></p>
+              <p><a href="https://doc.rust-lang.org/stable/book/ch06-01-defining-an-enum.html">Tagged unions/Sum types/Enums</a></p>
+              <p><a href="https://doc.rust-lang.org/stable/book/ch18-00-patterns.html#patterns-and-matching">Pattern Matching</a></p>
+              <p>
+              <img style="vertical-align:middle;" src="https://doc.rust-lang.org/stable/book/img/ferris/unsafe.svg" height="40em"/>
+              <a href="https://doc.rust-lang.org/nomicon/index.html"><em><b>Unsafe</b></em></a>
+              </p>
+            </div>
+            <div style="margin-left: 3em">
+              <p><a href="https://doc.rust-lang.org/stable/book/">The Rust Book</a></p>
+              <img height="400em" src="img/the_book.jpg" />
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
 
-                <script src="dist/reveal.js"></script>
-                <script src="plugin/notes/notes.js"></script>
-                <script src="plugin/markdown/markdown.js"></script>
-                <script src="plugin/highlight/highlight.js"></script>
-                <script>
-                  // More info about initialization & config:
-                  // - https://revealjs.com/initialization/
-                  // - https://revealjs.com/config/
-                  Reveal.initialize({
-                                      hash: true,
-                                      // Learn about plugins: https://revealjs.com/plugins/
-                                      plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-                                    });
-                </script>
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script>
+      // More info about initialization & config:
+      // - https://revealjs.com/initialization/
+      // - https://revealjs.com/config/
+      Reveal.initialize({
+              hash: true,
+              // Learn about plugins: https://revealjs.com/plugins/
+              plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+            });
+    </script>
   </body>
 </html>
