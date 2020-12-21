@@ -425,7 +425,7 @@ Vec&lt;i32&gt;</code>
             </aside>
           </section>
           <section data-auto-animate>
-            <pre class="lang-c">
+            <pre class="lang-c" data-id="code-animation">
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int* foo() {
@@ -441,13 +441,13 @@ Vec&lt;i32&gt;</code>
             </pre>
           </section>
           <section data-auto-animate>
-            <pre class="lang-c">
+            <pre class="lang-c" data-id="code-animation">
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int* foo() {
                   int a[] = {1,2,3}; // lifetime of `a` starts
                   return a;
-                } // lifetime of `a` starts
+                } // lifetime of `a` ends
                 int main() {
                   int a = foo();
                   printf("%d,%d,%d\n", a[0], a[1], a[2]);
@@ -464,7 +464,7 @@ Vec&lt;i32&gt;</code>
             </pre>
           </section>
           <section data-auto-animate>
-            <pre class="lang-c">
+            <pre class="lang-c" data-id="code-animation">
               <code data-trim data-line-numbers>
               <script type="text/template">
                 int* foo() {
