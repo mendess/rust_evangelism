@@ -28,36 +28,26 @@
             alt="C"
             height="150em"/>
           </p>
-          <p class="author">Pedro Mendes</p>
+          <p class="author">Mendes</p>
           <img
             style='vertical-align:middle;'
             src="img/ferris.png"
             alt="C"
             height="80em"/>
         </section>
-        <section data-markdown>
-          <textarea data-template>
-            # _disclaimer_
-
-            Esta talk não é um tutorial de Rust!
-
-            É apenas uma demonstração das features que mais inovadoras da
-            linguagem.
-          </textarea>
-        </section>
         <section>
-          <h1>O que é Rust?</h1>
+          <h1>What is Rust?</h1>
           <section>
-            Rust é uma <em>systems programming language</em>, ou seja, permite
-            ter um controlo de baixo nível do hardware e recursos da máquina.
+            Rust is a <em>systems programming language</em>, this means it allows
+            low level control of the hardware and system resourses.
             <br>
-            As duas linguagens mais conhecidas neste campo são
+            The two most <em>in</em>famous languages in this field are
             <img
               style='vertical-align:middle;'
               src="img/c.png"
               alt="C"
               height="40em"/>
-            e
+            and
             <img
               style='vertical-align:middle;'
               src="img/cpp.png"
@@ -65,13 +55,11 @@
               height="40em"/>.
           </section>
           <section>
-            <h3>Porquê fazer uma linguagem nova?</h3>
+            <h3>Why make a new language?</h3>
 
             <img style='vertical-align:middle;' src="img/c.png" alt="C" height="40em"/>,
             <img style='vertical-align:middle;' src="img/cpp.png" alt="C++" height="40em"/>
-            são linguagens que dão muito poder e controlo
-            a quem as usa,
-            deixam controlar todos os detalhes. Mas...
+            are languages that give you a lot of power and control to their users, but...
             <div class="fragment">
               <blockquote>
                 With great power, comes great responsibility
@@ -80,33 +68,28 @@
             </div>
           </section>
           <section>
-            Qual é o principal dificuldade de trabalhar com estas linguagens?
-            <span class="fragment">Gestão de memória.</span>
+            And what is the main dificulty when working with this languages?
+            <span class="fragment">Memory safety</span>
 
             <pre class="fragment"> Segmentation fault (core dumped) </pre>
 
-            <aside class="notes">
-              E se houvesse uma linguagem lowlevel em que não e possível*
-              compilar sequer
-              código que pode dar segmentation fault?
-            </aside>
+            <span class="fragment">What if we could make a language where a
+              segmentation fault doesn't compile?</span>
           </section>
         </section>
         <section>
           <h1>Ownership</h1>
           <section>
-            <em>Ownership</em> é um dos <em>mental models</em> que podemos
-            utilizar para conseguir evitar um conjunto de bugs como "double
-            free" ou "use after free".
+            <em>Ownership</em> is one of the <em>mental models</em> that we can use
+            the avoid a whole class of bugs like "double free" or "use after free".
 
             <div class="fragment">
-              Podemos ver <em>ownership</em> como uma forma de responder à
-              pergunta:
-              "Quem é responsável por libertar esta memória?"
+              Rust is not garbage collected so we can turn to ownership to answer the question
+              "Who is responsible for freeing a particular block of memory?"
             </div>
           </section>
           <section data-auto-animate>
-            Começando por fazer um array dinâmico simples em
+            Let's start by making a simple dynamic array in
             <img
               style='vertical-align:middle;'
               src="img/c.png"
@@ -121,12 +104,11 @@ typedef struct {
 } IntVec;
             </code></pre>
             <ul>
-              <li>
-                <b>values</b>:
-                Tem um pointer para os valores que o array guarda.
+              <li> <b>values</b>: Has a pointer to the integers we are storing</li>
+              <li> <b>used</b>: Is how many elements are being stored right now. </li>
+              <li> <b>capacity</b>: How much space exists in values. If
+                <b>used</b> == <b>capacity</b> we need to grow <b>values</b>
               </li>
-              <li> <b>used</b>: É quantos elementos tem. </li>
-              <li> <b>capacity</b>: Quanto espaço tem o array de values </li>
             </ul>
             <aside class="notes">
               Para vermos este conceito em ação vamos escrever um pouco de C
@@ -135,7 +117,7 @@ typedef struct {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-              <code data-trim data-line-numbers="7-10|7-12|7-16|7-18|1-19">
+              <code data-trim data-line-numbers="7-11|7-13|7-17|7-19|1-20">
 typedef struct {
     int* values;
     size_t capacity;
@@ -143,7 +125,8 @@ typedef struct {
 } IntVec;
 
 IntVec int_vec_make(size_t initial_cap) {
-  return (IntVec) {.capacity = initial_cap, .used = 0,
+  return (IntVec) {.capacity = initial_cap,
+                   .used = 0,
                    .values = malloc(sizeof(int) * initial_cap)};
 }
 
@@ -159,10 +142,11 @@ int main(void) {
           </section>
           <section data-auto-animate>
             <pre class="lang-c" data-id="code-animation">
-              <code data-trim data-line-numbers="11-12|11-14|11-16">
+              <code data-trim data-line-numbers="12-13|12-15|12-17">
 IntVec int_vec_make(size_t initial_cap) {
-  return (IntVec) {.capacity = initial_cap, .used = 0,
-                     .values = malloc(sizeof(int) * initial_cap)};
+  return (IntVec) {.capacity = initial_cap,
+                   .used = 0,
+                   .values = malloc(sizeof(int) * initial_cap)};
 }
 
 void int_vec_drop(IntVec a) { free(a.values); }
@@ -170,7 +154,7 @@ void int_vec_drop(IntVec a) { free(a.values); }
 int main(void) {
     // a owns the memory
     IntVec a = int_vec_make(5);
-    // oh no, now both a and b own the memory
+    // oh no, now both a and b "own" the memory?
     IntVec b = a;
     // a's memory is dropped/freed
     int_vec_drop(a);
@@ -180,11 +164,11 @@ int main(void) {
             </code></pre>
           </section>
           <section data-auto-animate data-background-color="#750b0b">
-            <pre class="lang-c" data-id="code-animation">
-              <code data-trim data-line-numbers="1-17">
+            <pre class="lang-c" data-id="code-animation"><code data-trim data-line-numbers="1-17">
 IntVec int_vec_make(size_t initial_cap) {
-  return (IntVec) {.capacity = initial_cap, .used = 0,
-                     .values = malloc(sizeof(int) * initial_cap)};
+  return (IntVec) {.capacity = initial_cap,
+                   .used = 0,
+                   .values = malloc(sizeof(int) * initial_cap)};
 }
 
 void int_vec_drop(IntVec a) { free(a.values); }
@@ -192,36 +176,30 @@ void int_vec_drop(IntVec a) { free(a.values); }
 int main(void) {
     // a owns the memory
     IntVec a = int_vec_make(5);
-    // oh no, now both a and b own the memory
+    // oh no, now both a and b "own" the memory?
     IntVec b = a;
     // a's memory is dropped/freed
     int_vec_drop(a);
     // use after free because there were two "owners"
-    printf("%d\n", b.values[1]); // Undefined behaviour
+    printf("%d\n", b.values[1]);
 }
             </code></pre>
             <aside class="notes">
-              Nao correu muito bem, vamos ver como é que Rust impede que isto
-              aconteça.
+              That didn't go so well, let's see how rust can stop this from happening.
             </aside>
           </section>
           <section data-auto-animate>
-            Vamos partir do mesmo ponto.
+            Let's start from the same code.
             <br>
-            Um array dinâmico, em Rust chama-se vector e já está implementado.
+            The dynamic array in rust is called a vector and is already implemented.
             <pre class="lang-rust" data-id="code-animation">
               <code style="text-align: center; font-size: 28px">
-Vec&lt;i32&gt;</code>
+Vec&lt;i32&gt;
+              </code>
             </pre>
-            Este tipo é equivalente ao IntVec de
-            <img
-              style='vertical-align:middle;'
-              src="img/c.png"
-              alt="C"
-              height="40em"/>
 
             <aside class="notes">
-              É um pointer, capacity, e used.
+              It's a pointer, capacity, and used.
             </aside>
             <br>
           </section>
@@ -241,9 +219,9 @@ Vec&lt;i32&gt;</code>
             </aside>
           </section>
           <section data-auto-animate>
-            Agora vamos tentar criar o mesmo erro.
+            Now let's try to create the same error.
             <pre class="lang-rust" data-id="code-animation">
-              <code data-trim data-line-numbers="4-6|4-9">
+              <code data-trim data-line-numbers="4-5|4-7|4-9">
                 fn main() {
                   // a owns the memory
                   let a: Vec&lt;i32&gt; = Vec::with_capacity(5);
@@ -295,14 +273,12 @@ Vec&lt;i32&gt;</code>
           </section>
           <section>
             <div style="text-align: left">
-              <h4 class="fragment" data-fragment-index="1"> Como é que Rust previne estes bugs ?  </h4>
+              <h4 class="fragment" data-fragment-index="1"> How does ownership prevent "double free" and "use after free" bugs ?  </h4>
               <h4 class="fragment" data-fragment-index="2"> Double free </h4>
               <div class="fragment" data-fragment-index="3">
                 <ul>
-                  <li> Para cada bloco de memória, existe apenas um dono. </li>
-                  <li>
-                    Apenas o dono de um bloco memória pode libertar o mesmo.
-                  </li>
+                  <li> For each block of memory the is only ever one owner </li>
+                  <li> And only this one owner can free it's memory </li>
                 </ul>
               </div>
             </div>
@@ -310,9 +286,7 @@ Vec&lt;i32&gt;</code>
             <div style="text-align: left">
               <h4 class="fragment" data-fragment-index="4"> Use after free </h4>
               <div class="fragment" data-fragment-index="5">
-                Sempre que a <em>ownership</em> de um bloco de memória é passada
-                de uma variável para outra, a antiga fica num estado
-                inutilizável, e o compilador garante que não será mais acedida.
+                Every time ownership of a variable is passed to a new variable, the previous variable becomes <em>uninitialized</em> and the compiler won't let you use it.
               </div>
             </div>
           </section>
@@ -321,16 +295,18 @@ Vec&lt;i32&gt;</code>
           <h1>Lifetimes</h1>
           <section>
             <p class="fragment">
-            Isto é um pouco restritivo
+            Now, you might be thinking..
             <br>
-            E se quisermos partilhar um objecto por varias
-            partes do codigo?
+            ..what if I want to share the same object in various parts of my code?
             </p>
             <p class="fragment">
             Pointers?
             </p>
             <p class="fragment">
-            Mas assim introduzimos "use after free" bugs outra vez...
+            But pointers are scary :(
+            </p>
+            <p class="fragment">
+              Having pointers means we can have <em>dangling</em> pointers.
             </p>
             <aside class="notes">
               <p>
@@ -345,17 +321,21 @@ Vec&lt;i32&gt;</code>
             </aside>
           </section>
           <section>
-            <b>Lifetime:</b> Região do programa em que um dado objecto existe.
+            <span class="fragment">
+              <b>Lifetime:</b> Span of the program where an object is live.
+            </span>
             <br>
             <br>
             <br>
-            Portanto isto é """simples""" um pointer/referencia nunca pode
-            existir mais "tempo" do que o objecto para que aponta.
+            <span class="fragment">
+              So the fix is """simple""", a pointer can only exist for as long as the object it
+              points to exists.
+            </span>
           </section>
           <section>
-            Podemos pensar que as <tt>{}</tt> delimitam o <em>lifetime</em> de
-            um objecto
-            <div class="r-stack">
+            And we already have language constructs for this: <tt>{}</tt>.
+            Curlies tell us for how long an object lives.
+            <div class="r-stack fragment">
               <pre class="lang-c" data-id="code-animation">
               <code data-trim data-line-numbers>
               <script type="text/template">
@@ -403,16 +383,15 @@ Vec&lt;i32&gt;</code>
           <section>
             <h3>Undefined Behaviour</h3>
             <p>
-            Algumas "construções" são consideradas UB pelo standard de
-            C e o compilador tem a liberdade fazer o que quiser com o programa
-            assim que encontra UB.
+              Undefined behaviour is when the behaviour of your program is impossible to define. In
+              these situations the compiler is free to change your program in any way it sees fit, since
+              it can assume that UB does not happen.
             </p>
 
             <div class="fragment">
               <p>
-              Por exemplo, em <tt>gcc version 10.2.0</tt> compilar o programa
-              anterior, com <tt>-O2</tt>, resulta no seguinte assembly para a
-              função <tt>foo</tt>.
+              For example, in <tt>gcc version 10.2.0</tt> compiling the previous program
+              , with <tt>-O2</tt> optimizations, results in this assembly for function <tt>foo</tt>.
               </p>
               <pre class="lang-asm">
             <code data-trim>
@@ -421,7 +400,7 @@ Vec&lt;i32&gt;</code>
               </code></pre>
             </div>
             <aside class="notes">
-              Mas isto ainda fica pior! Vamos ver ainda outro exemplo.
+              But this can get even worse! Let's see another example.
             </aside>
           </section>
           <section data-auto-animate>
@@ -491,12 +470,11 @@ Vec&lt;i32&gt;</code>
             <a class="fragment"
                href="https://www.felixcloutier.com/x86/ud">? ud2 ?</a>
             <aside class="notes">
-              ud2 e uma instrução de assembly invalida, de certa forma e um
-              Segmentation Fault hardcoded no programa. Tal como disse antes o
-              compilador pode fazer o que bem entende quando encontra UB
+              ud2 is an invalid machine instruction, in a way it's a hardcoded
+              Segmentation Fault. As you can see the compiler can do what it pleases
+              when it encounters UB.
 
-              Mais uma vez, isto e um bug que Rust simplesmente não permite,
-              fazendo uso de lifetimes.
+              And again, this is a bug rust just won't allow for.
             </aside>
           </section>
           <section data-auto-animate>
@@ -536,49 +514,54 @@ Vec&lt;i32&gt;</code>
         <section>
           <h1>Borrowing</h1>
           <section>
-            Em Rust um pointer ou referência é normalmente chamado de um
+            In Rust a reference is usually called a
             <em>borrow</em>.
             <br>
             <br>
             <br>
-            Tal como temos variáveis que são "donas" (owners) de coisas estas
-            coisas também podem ser "emprestadas" (borrowed).
+            Some variables own things, and some borrow things.
+
+            <p class="fragment">And as we all know, it's considered
+              <em>rude</em> to ruin (drop) something we borrowed</p>
             <aside class="notes">
               E quando se empresta algo é má educação estragar o que pedimos
               emprestado.
             </aside>
           </section>
           <section>
-            <h4>Há dois tipos de borrows em Rust:</h4>
+            <h4>There are 2 of borrows in Rust:</h4>
             <ul>
               <li class="fragment" >
-                <b>shared</b> (ou <b>immutable</b>)
+                <b style="color: yellow">shared</b> (or <b>immutable</b>)
               </li>
               <li class="fragment">
-                <b>exclusive</b> (ou <b>mutable</b>)
+                <b style="color: red">exclusive</b> (or <b>mutable</b>)
               </li>
             </ul>
-            <br>
-            <br>
-            <h4 class="fragment">E há duas regras para estes:</h4>
-            <p class="fragment" style="text-align: left">Em qualquer ponto do programa...  </p>
+          </section>
+          <section>
+            <h4>And there are 2 rules for these:</h4>
+            <p class="fragment" style="text-align: left">At any point in the program...  </p>
             <ul>
               <li class="fragment">
-                ... podem existir qualquer número de <b>shared borrows</b> para um
-                determinado objecto e nenhum <b>exclusive borrow</b>.
+                ... there can be any number of <b style="color: yellow">shared borrows</b> to any one object
+                and no <b style="color: red">exclusive borrows</b>.
               </li>
               <li class="fragment">
-                ... se existe um <b>exclusive borrow</b> para um objecto, não
-                pode haver mais nenhum <em>borrow</em> de qualquer tipo.
+                ... if there is an <b style="color: red">exclusive borrow</b> to an object, no other <em>borrow</em>,
+                of any kind, can exist simultaneously.
               </li>
             </ul>
+            <br/>
+            <br/>
+            <em class="fragment">oh, would you look at that, we just got thread safety for free</em>
             <aside class="notes">
               Mas isto é muito abstrato, vamos ver um exemplo na nossa trusty C
               language.
             </aside>
           </section>
           <section data-auto-animate>
-            Vamos continuar a utilizar o array dinâmico da secção anterior.
+            Let's see a new example with our dynamic array.
 
             <pre class="lang-c" data-id="code-animation"><code data-trim>
 typedef struct {
@@ -598,20 +581,20 @@ typedef struct {
 } IntVec;
 
 void int_vec_push(IntVec* self, int value) {
-  // Caso o vector esteja cheio
+  // If the vector is full
   if(self->capacity == self->used) {
-    // Duplicar a capacidade do vector
+    // We double the capacity
     self->capacity = self->capacity ? self->capacity * 2 : 1;
-    // Realocar o array, usando agora o dobro da capacidade
+    // Realocate the array, doubling the capacity.
     self->values = realloc(self->values, sizeof(int) * self->capacity);
   }
-  // Adicionar ao vector
+  // Add a new value to the vector
   self->values[self->used++] = value;
 }
             </code></pre>
             <p class="fragment">
-            A linha mais importante deste código e a 13. Nesta linha podemos ver
-            que o pointer <code>self->values</code> muda!
+            The most important line in this code is line 13. In this line we can see
+            that the pointer <code>self->values</code> is being reassigned!
             </p>
           </section>
           <section data-auto-animate>
@@ -624,16 +607,16 @@ void int_vec_push(IntVec* self, int value);
 int main(void) {
   IntVec v = int_vec_make(0);
 
-  // Fazemos push de um valor
-  int_vec_push(&v, 1); // isto realoca porque capacity(0) == used(0)
+  // Push a new value
+  int_vec_push(&v, 1); // this reallocates because capacity(0) == used(0)
 
-  // Criamos um pointer para o primeiro valor do vector
+  // create a pointer to the first value of the vector
   int* first_value_ptr = &v.values[0];
 
-  // Fazemos push de mais um valor
-  int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
+  // Push a new value
+  int_vec_push(&v, 2); // capacity(1) == used(1) so we realocate
 
-  // Tentamos alterar o primeiro valor do vector
+  // We try to mutate the first value of the vector
   *first_value_ptr = 42;
 }
             </code></pre>
@@ -648,17 +631,17 @@ void int_vec_push(IntVec* self, int value);
 int main(void) {
   IntVec v = int_vec_make(0);
 
-  // Fazemos push de um valor
-  int_vec_push(&v, 1); // isto realoca porque capacity(0) == used(0)
+  // Push a new value
+  int_vec_push(&v, 1); // this reallocates because capacity(0) == used(0)
 
-  // Criamos um pointer para o primeiro valor do vector
+  // create a pointer to the first value of the vector
   int* first_value_ptr = &v.values[0];
 
-  // Fazemos push de mais um valor
-  int_vec_push(&v, 2); // capacity(1) == used(1) então realocamos
+  // Push a new value
+  int_vec_push(&v, 2); // capacity(1) == used(1) so we realocate
 
-  // Tentamos alterar o primeiro valor do vector
-  *first_value_ptr = 42; // Undefined behaviour
+  // We try to mutate the first value of the vector
+  *first_value_ptr = 42; // 🔥
 }
             </code></pre>
             <aside class="notes">
@@ -673,16 +656,16 @@ int main(void) {
             fn main() {
               let mut v = Vec::new();
 
-              // Fazemos push de um valor
+              // Push a new value
               v.push(1);
 
-              // Criamos um pointer para o primeiro valor do vector
+              // create a pointer to the first value of the vector
               let first_value_ptr = &mut v[0];
 
-              // Fazemos push de mais um valor
+              // Push a new value
               v.push(2);
 
-              // Tentamos alterar o primeiro valor do vector
+              // We try to mutate the first value of the vector
               *first_value_ptr = 42;
             }
             </code></pre>
@@ -691,22 +674,22 @@ int main(void) {
             <div class="r-stack">
               <pre class="lang-rust" data-id="code-animation">
               <code data-trim data-line-numbers="1-15">
-              fn main() {
-                let mut v = Vec::new();
+            fn main() {
+              let mut v = Vec::new();
 
-                // Fazemos push de um valor
-                v.push(1);
+              // Push a new value
+              v.push(1);
 
-                // Criamos um pointer para o primeiro valor do vector
-                let first_value_ptr = &mut v[0];
+              // create a pointer to the first value of the vector
+              let first_value_ptr = &mut v[0];
 
-                // Fazemos push de mais um valor
-                v.push(2);
+              // Push a new value
+              v.push(2);
 
-                // Tentamos alterar o primeiro valor do vector
-                *first_value_ptr = 42;
-              }
-              </code>
+              // We try to mutate the first value of the vector
+              *first_value_ptr = 42;
+            }
+            </code>
               </pre>
               <img src="img/multiple_mutable_borrows.png" />
             </div>
@@ -716,18 +699,18 @@ int main(void) {
               <div style="width:100%">
                 <pre class="lang-rust" data-id="code-animation">
                   <code data-trim data-line-numbers="1-11">
-                  fn main() {
-                    let mut v = Vec::new();
-                    // Fazemos push de um valor
-                    v.push(1);
-                    // Criamos um pointer para o primeiro valor do vector
-                    let first_value_ptr = &mut v[0];
-                    // Fazemos push de mais um valor
-                    v.push(2);
-                    // Tentamos alterar o primeiro valor do vector
-                    *first_value_ptr = 42;
-                  }
-                  </code>
+            fn main() {
+              let mut v = Vec::new();
+              // Push a new value
+              v.push(1);
+              // create a pointer to the first value of the vector
+              let first_value_ptr = &mut v[0];
+              // Push a new value
+              v.push(2);
+              // We try to mutate the first value of the vector
+              *first_value_ptr = 42;
+            }
+            </code>
                 </pre>
                 <img src="img/multiple_mutable_borrows_short.png" />
               </div>
@@ -742,18 +725,18 @@ int main(void) {
               <div style="width:100%">
                 <pre class="lang-rust" data-id="code-animation">
                   <code data-trim data-line-numbers="1-11">
-                  fn main() {
-                    let mut v = Vec::new();
-                    // Fazemos push de um valor
-                    Vec::push(&mut v, 1); // equivalente a v.push(1);
-                    // Criamos um pointer para o primeiro valor do vector
-                    let first_value_ptr = &mut v[0];
-                    // Fazemos push de mais um valor
-                    Vec::push(&mut v, 2); // equivalente a v.push(2);
-                    // Tentamos alterar o primeiro valor do vector
-                    *first_value_ptr = 42;
-                  }
-                  </code>
+            fn main() {
+              let mut v = Vec::new();
+              // Push a new value
+              v.push(1);
+              // create a pointer to the first value of the vector
+              let first_value_ptr = &mut v[0];
+              // Push a new value
+              v.push(2);
+              // We try to mutate the first value of the vector
+              *first_value_ptr = 42;
+            }
+            </code>
                 </pre>
                 <img src="img/multiple_mutable_borrows_short.png" />
               </div>
@@ -765,7 +748,7 @@ int main(void) {
           </section>
         </section>
         <section data-autoslide="1000" data-auto-animate>
-          <h1>E muito mais...</h1>
+          <h1>And lot's more...</h1>
           <p class="fragment"><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Zero cost abstractions</a></p>
           <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch13-02-iterators.html">Iterators</a></p>
           <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch16-00-concurrency.html">Safe concurrency</a></p>
@@ -774,12 +757,12 @@ int main(void) {
           <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch06-01-defining-an-enum.html">Tagged unions/Sum types/Enums</a></p>
           <p class="fragment"><a href="https://doc.rust-lang.org/stable/book/ch18-00-patterns.html#patterns-and-matching">Pattern Matching</a></p>
           <p class="fragment">
-          <img style="vertical-align:middle;" src="https://doc.rust-lang.org/stable/book/img/ferris/unsafe.svg" height="40em"/>
+          <img style="vertical-align:middle;" src="https://cdn.discordapp.com/attachments/411615726739390464/992012592061087744/unknown.png" height="40em"/>
           <a href="https://doc.rust-lang.org/nomicon/index.html"><em><b>Unsafe</b></em></a>
           </p>
         </section>
         <section data-autoslide="1000" data-auto-animate>
-          <h1>E muito mais...</h1>
+          <h1>And lot's more...</h1>
           <div style="display: flex">
             <div>
               <p><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Zero cost abstractions</a></p>
@@ -790,7 +773,7 @@ int main(void) {
               <p><a href="https://doc.rust-lang.org/stable/book/ch06-01-defining-an-enum.html">Tagged unions/Sum types/Enums</a></p>
               <p><a href="https://doc.rust-lang.org/stable/book/ch18-00-patterns.html#patterns-and-matching">Pattern Matching</a></p>
               <p>
-              <img style="vertical-align:middle;" src="https://doc.rust-lang.org/stable/book/img/ferris/unsafe.svg" height="40em"/>
+              <img style="vertical-align:middle;" src="https://cdn.discordapp.com/attachments/411615726739390464/992012592061087744/unknown.png" height="40em"/>
               <a href="https://doc.rust-lang.org/nomicon/index.html"><em><b>Unsafe</b></em></a>
               </p>
             </div>
